@@ -1,0 +1,14 @@
+FROM alpine:3.17.3
+
+COPY src /root/pkcs11-proxy
+COPY tls /root/tls
+
+WORKDIR /root/pkcs11-proxy
+
+RUN apk add alpine-sdk bash cmake openssl-dev libseccomp-dev opensc
+RUN cmake . && make && make install
+
+#ENV PKCS11_PROXY_SOCKET="tls://0.0.0.0:3686"
+ENV PKCS11_PROXY_TLS_PSK_FILE="/root/tls/key.psk"
+
+#ENTRYPOINT [ "pkcs11-daemon", "/usr/lib/softhsm/libsofthsm2.so" ]

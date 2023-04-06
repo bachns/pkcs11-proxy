@@ -1,0 +1,20 @@
+FROM alpine:3.17.3
+
+COPY src /root/pkcs11-proxy
+COPY tls /root/tls
+
+WORKDIR /root/pkcs11-proxy
+
+RUN apk add alpine-sdk softhsm bash cmake openssl-dev libseccomp-dev opensc
+RUN cmake . && make && make install
+
+ENV HSM_TOKEN_LABEL="first-token"
+ENV HSM_PIN="123456"
+ENV HSM_SO_PIN="123456"
+
+RUN softhsm2-util --init-token --free --label ${HSM_TOKEN_LABEL} --pin ${HSM_PIN} --so-pin ${HSM_SO_PIN}
+
+ENV PKCS11_DAEMON_SOCKET="tls://0.0.0.0:3686"
+ENV PKCS11_PROXY_TLS_PSK_FILE="/root/tls/key.psk"
+
+ENTRYPOINT [ "pkcs11-daemon", "/usr/lib/softhsm/libsofthsm2.so" ]
